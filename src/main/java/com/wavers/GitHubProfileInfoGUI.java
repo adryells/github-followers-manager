@@ -15,30 +15,49 @@ import java.util.List;
 public class GitHubProfileInfoGUI extends JFrame {
     private final JTextArea resultTextArea;
     private final JTextField usernameTextField;
+    private JsonElement searchedUser;
+    private final JButton followersButton;
+    private final JButton followingButton;
+    private int followersCount;
+    private int followingCount;
 
     public GitHubProfileInfoGUI() {
         setTitle("GitHub Profile Info");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JButton followersButton = new JButton("List Followers");
-        JButton followingButton = new JButton("List Following");
+        JButton searchButton = new JButton("Search User");
         resultTextArea = new JTextArea();
         usernameTextField = new JTextField(20);
+
+        followersButton = new JButton("List Followers");
+        followingButton = new JButton("List Following");
+        followersButton.setVisible(false);
+        followingButton.setVisible(false);
+
+        searchButton.addActionListener(
+                new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String username = usernameTextField.getText();
+                        searchUser(username);
+                        followersButton.setVisible(true);
+                        followingButton.setVisible(true);
+                    }
+                }
+        );
 
         followersButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String username = usernameTextField.getText();
-                listFollowers(username);
+                createPaginationButtons("followers");
             }
         });
 
         followingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String username = usernameTextField.getText();
-                listFollowing(username);
+                createPaginationButtons("following");
             }
         });
 
@@ -47,6 +66,7 @@ public class GitHubProfileInfoGUI extends JFrame {
         JPanel userInputPanel = new JPanel();
         userInputPanel.add(new JLabel("GitHub Username:"));
         userInputPanel.add(usernameTextField);
+        userInputPanel.add(searchButton);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(followersButton);
@@ -62,28 +82,56 @@ public class GitHubProfileInfoGUI extends JFrame {
         getContentPane().add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void listFollowers(String username) {
-        List<String> followers = getFollowers(username);
-
-        resultTextArea.setText("Followers of " + username + ":\n");
-        for (String follower : followers) {
-            resultTextArea.append(follower + "\n");
+    private void searchUser(String username) {
+        try {
+            String url = "https://api.github.com/users/" + username;
+            String jsonResponse = HttpClient.sendGetRequest(url);
+            searchedUser = JsonParser.parseString(jsonResponse);
+            followersCount = searchedUser.getAsJsonObject().get("followers").getAsInt();
+            followingCount = searchedUser.getAsJsonObject().get("following").getAsInt();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    private void listFollowing(String username) {
-        List<String> following = getFollowing(username);
+    private void createPaginationButtons(String type) {
+        int totalCount = type.equals("followers") ? followersCount : followingCount;
+        int totalPages = (totalCount + 24) / 25;
 
-        resultTextArea.setText("Following from " + username + ":\n");
-        for (String followed : following) {
-            resultTextArea.append(followed + "\n");
+        JFrame paginationFrame = new JFrame(type.equals("followers") ? "Followers Pagination" : "Following Pagination");
+        paginationFrame.setLayout(new FlowLayout());
+
+        for (int i = 1; i <= totalPages; i++) {
+            JButton pageButton = new JButton(Integer.toString(i));
+            int page = i;
+            pageButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    handlePaginationClick(type, page);
+                }
+            });
+            paginationFrame.add(pageButton);
+        }
+
+        paginationFrame.pack();
+        paginationFrame.setVisible(true);
+    }
+
+    private void handlePaginationClick(String type, int page) {
+        String username = usernameTextField.getText();
+        if (type.equals("followers")) {
+            List<String> followers = getFollowersWithPagination(username, page);
+            displayFollowers(followers);
+        } else {
+            List<String> following = getFollowingWithPagination(username, page);
+            displayFollowing(following);
         }
     }
 
-    private List<String> getFollowers(String username) {
+    private List<String> getFollowersWithPagination(String username, int page) {
         List<String> followers = new ArrayList<>();
         try {
-            String url = "https://api.github.com/users/" + username + "/followers?per_page=25&page=1";
+            String url = "https://api.github.com/users/" + username + "/followers?per_page=25&page=" + page;
             String jsonResponse = HttpClient.sendGetRequest(url);
             JsonArray jsonArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
             for (JsonElement jsonElement : jsonArray) {
@@ -95,10 +143,10 @@ public class GitHubProfileInfoGUI extends JFrame {
         return followers;
     }
 
-    private List<String> getFollowing(String username) {
+    private List<String> getFollowingWithPagination(String username, int page) {
         List<String> following = new ArrayList<>();
         try {
-            String url = "https://api.github.com/users/" + username + "/following?per_page=25&page=1";
+            String url = "https://api.github.com/users/" + username + "/following?per_page=25&page=" + page;
             String jsonResponse = HttpClient.sendGetRequest(url);
             JsonArray jsonArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
             for (JsonElement jsonElement : jsonArray) {
@@ -110,31 +158,18 @@ public class GitHubProfileInfoGUI extends JFrame {
         return following;
     }
 
-    private Integer getFollowingCount(String username) {
-        Integer followingCount = 0;
-
-        try {
-            String url = "https://api.github.com/users/" + username;
-            String jsonResponse = HttpClient.sendGetRequest(url);
-            JsonArray jsonArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void displayFollowers(List<String> followers) {
+        resultTextArea.setText("Followers:\n");
+        for (String follower : followers) {
+            resultTextArea.append(follower + "\n");
         }
-
-        return followingCount;
     }
 
-    private Integer getFollowersCount(String username) {
-        Integer followersCount = 0;
-        try {
-            String url = "https://api.github.com/users/" + username;
-            String jsonResponse = HttpClient.sendGetRequest(url);
-            JsonArray jsonArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void displayFollowing(List<String> following) {
+        resultTextArea.setText("Following:\n");
+        for (String followed : following) {
+            resultTextArea.append(followed + "\n");
         }
-
-        return followersCount;
     }
 
     public static void main(String[] args) {
