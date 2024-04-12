@@ -17,6 +17,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation 'org.kohsuke:github-api:1.132'
     implementation 'com.google.code.gson:gson:2.8.8'
+        implementation 'org.xerial:sqlite-jdbc:3.36.0.1'
+
 }
 
 test {

@@ -4,11 +4,13 @@ public class UserData {
     private String login;
     private String avatarUrl;
     private String htmlUrl;
+    private Long githubId;
 
-    public UserData(String login, String avatarUrl, String htmlUrl) {
+    public UserData(Long githubId, String login, String avatarUrl, String htmlUrl) {
         this.login = login;
         this.avatarUrl = avatarUrl;
         this.htmlUrl = htmlUrl;
+        this.githubId = githubId;
     }
 
     public String getAvatarUrl() {
@@ -21,6 +23,14 @@ public class UserData {
 
     public String getLogin() {
         return login;
+    }
+
+    public Long getGithubId() {
+        return githubId;
+    }
+
+    public void setGithubId(Long githubId) {
+        this.githubId = githubId;
     }
 
     public void setAvatarUrl(String avatarUrl) {
