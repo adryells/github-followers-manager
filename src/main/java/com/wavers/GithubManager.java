@@ -24,25 +24,31 @@ public class GithubManager {
     public List<UserData> getNewFollowers(String username) throws IOException {
         GHUser user = github.getUser(username);
 
-        List<UserData> followersInDb = dbManager.getAllUsers();
+        List<Long> followersInDb = dbManager.getAllUsers().stream().map(UserData::getGithubId).toList();
 
         List<UserData> currentFollowers = user.getFollowers().stream().map(this::convertToUserData).toList();
 
         return currentFollowers.stream()
-                .filter(follower -> !followersInDb.contains(follower))
+                .filter(follower -> !followersInDb.contains(follower.getGithubId()))
                 .peek(dbManager::insertUserData)
                 .collect(Collectors.toList());
+    }
+
+    public List<UserData> getFollowers(String username) throws IOException {
+        GHUser user = github.getUser(username);
+
+        return user.getFollowers().stream().map(this::convertToUserData).toList();
     }
 
     public List<UserData> getUnfollowers(String username) throws IOException {
         GHUser user = github.getUser(username);
 
-        List<UserData> followersInDb = dbManager.getAllUsers();
+        List<UserData> followersInDb = dbManager.getAllUsers().stream().toList();
 
-        List<UserData> currentFollowers = user.getFollowers().stream().map(this::convertToUserData).toList();
+        List<Long> currentFollowers = user.getFollowers().stream().map(this::convertToUserData).map(UserData::getGithubId).toList();
 
         return followersInDb.stream()
-                .filter(follower -> !currentFollowers.contains(follower))
+                .filter(follower -> !currentFollowers.contains(follower.getGithubId()))
                 .collect(Collectors.toList());
     }
 }
