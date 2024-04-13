@@ -49,6 +49,7 @@ public class GithubManager {
 
         return followersInDb.stream()
                 .filter(follower -> !currentFollowers.contains(follower.getGithubId()))
+                .peek(dbManager::deleteUserData)
                 .collect(Collectors.toList());
     }
 }

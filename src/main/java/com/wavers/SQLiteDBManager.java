@@ -55,6 +55,17 @@ public class SQLiteDBManager {
         }
     }
 
+    public void deleteUserData(UserData userData) {
+        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+             Statement stmt = conn.createStatement()) {
+            String deleteSql = String.format("DELETE FROM users WHERE githubId = %d", userData.getGithubId());
+            stmt.executeUpdate(deleteSql);
+        } catch (SQLException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+
     public List<UserData> getAllUsers() {
         List<UserData> userList = new ArrayList<>();
 

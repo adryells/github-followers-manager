@@ -25,13 +25,13 @@ public class GithubManagerApp extends JFrame {
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
 
         dbManager = new SQLiteDBManager();
 
         JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-
         JPanel inputPanel = new JPanel(new FlowLayout());
+        JPanel optionsPanel = new JPanel(new FlowLayout());
 
         usernameComboBox = new JComboBox<>();
         usernameComboBox.setEditable(true);
@@ -47,15 +47,14 @@ public class GithubManagerApp extends JFrame {
                 accessTokenField.setText(accessToken);
             }
         });
-        inputPanel.add(usernameComboBox);
 
         accessTokenField = new JTextField(15);
         accessTokenField.setBorder(BorderFactory.createTitledBorder("Personal Access Token"));
-        inputPanel.add(accessTokenField);
 
         JButton listFollowersButton = new JButton("All Followers");
         JButton listNewFollowersButton = new JButton("New Followers");
         JButton listUnFollowersButton = new JButton("UnFollowers");
+        JButton insertButton = new JButton("Save login");
         String username = (String) usernameComboBox.getSelectedItem();
 
         listFollowersButton.addActionListener(new ActionListener() {
@@ -91,25 +90,29 @@ public class GithubManagerApp extends JFrame {
             }
         });
 
-        inputPanel.add(listFollowersButton);
-        inputPanel.add(listNewFollowersButton);
-        inputPanel.add(listUnFollowersButton);
-
-        JButton insertButton = new JButton("Save login");
         insertButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 insertLogin();
             }
         });
+
+        inputPanel.add(usernameComboBox);
+        inputPanel.add(accessTokenField);
         inputPanel.add(insertButton);
 
-        panel.add(inputPanel, BorderLayout.NORTH);
+        optionsPanel.add(listFollowersButton);
+        optionsPanel.add(listNewFollowersButton);
+        optionsPanel.add(listUnFollowersButton);
 
         followersTable = new JTable();
         followersTable.setRowHeight(50);
         JScrollPane scrollPane = new JScrollPane(followersTable);
-        panel.add(scrollPane, BorderLayout.CENTER);
+
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(inputPanel);
+        panel.add(optionsPanel);
+        panel.add(scrollPane);
 
         add(panel);
         setVisible(true);
@@ -128,18 +131,17 @@ public class GithubManagerApp extends JFrame {
             followersTable.addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
                 public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    int row = followersTable.rowAtPoint(evt.getPoint());
-                    int column = followersTable.columnAtPoint(evt.getPoint());
-                    if (row >= 0 && column == 0) {
+                    int viewRow = followersTable.rowAtPoint(evt.getPoint());
+                    int modelRow = followersTable.convertRowIndexToModel(viewRow);
+                    if (modelRow >= 0 && modelRow < users.size()) {
                         try {
-                            Desktop.getDesktop().browse(new URL(users.get(row).getHtmlUrl()).toURI());
+                            Desktop.getDesktop().browse(new URL(users.get(modelRow).getHtmlUrl()).toURI());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                 }
             });
-
 
             followersTable.setModel(model);
 
