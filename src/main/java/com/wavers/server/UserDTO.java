@@ -1,12 +1,12 @@
-package com.wavers;
+package com.wavers.server;
 
-public class UserData {
+public class UserDTO {
     private String login;
     private String avatarUrl;
     private String htmlUrl;
     private Long githubId;
 
-    public UserData(Long githubId, String login, String avatarUrl, String htmlUrl) {
+    public UserDTO(Long githubId, String login, String avatarUrl, String htmlUrl) {
         this.login = login;
         this.avatarUrl = avatarUrl;
         this.htmlUrl = htmlUrl;

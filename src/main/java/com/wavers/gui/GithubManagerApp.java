@@ -1,4 +1,9 @@
-package com.wavers;
+package com.wavers.gui;
+
+import com.wavers.server.GithubManager;
+import com.wavers.server.LoginManager;
+import com.wavers.server.SQLiteDBManager;
+import com.wavers.server.UserDTO;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -18,7 +23,7 @@ public class GithubManagerApp extends JFrame {
     private final JComboBox<String> usernameComboBox;
     private final JTextField accessTokenField;
     private final JTable followersTable;
-    private final SQLiteDBManager dbManager;
+    private final LoginManager lm = new LoginManager();
 
     public GithubManagerApp() {
         setTitle("GitHub Manager");
@@ -27,15 +32,13 @@ public class GithubManagerApp extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        dbManager = new SQLiteDBManager();
-
         JPanel panel = new JPanel();
         JPanel inputPanel = new JPanel(new FlowLayout());
         JPanel optionsPanel = new JPanel(new FlowLayout());
 
         usernameComboBox = new JComboBox<>();
         usernameComboBox.setEditable(true);
-        List<String> usernames = dbManager.getAllUsernames();
+        List<String> usernames = lm.getAllUsernames();
         for (String username : usernames) {
             usernameComboBox.addItem(username);
         }
@@ -43,7 +46,7 @@ public class GithubManagerApp extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selectedUsername = (String) usernameComboBox.getSelectedItem();
-                String accessToken = dbManager.getAccessToken(selectedUsername);
+                String accessToken = lm.getAccessToken(selectedUsername);
                 accessTokenField.setText(accessToken);
             }
         });
@@ -124,7 +127,7 @@ public class GithubManagerApp extends JFrame {
         return new GithubManager(accessToken);
     }
 
-    private void listUsers(List<UserData> users) {
+    private void listUsers(List<UserDTO> users) {
         try {
             DefaultTableModel model = getDefaultTableModel(users);
 
@@ -164,13 +167,13 @@ public class GithubManagerApp extends JFrame {
         }
     }
 
-    private static DefaultTableModel getDefaultTableModel(List<UserData> newFollowers) throws MalformedURLException {
+    private static DefaultTableModel getDefaultTableModel(List<UserDTO> newFollowers) throws MalformedURLException {
         DefaultTableModel model = new DefaultTableModel();
         model.addColumn("Avatar");
         model.addColumn("Github ID");
         model.addColumn("Login");
 
-        for (UserData follower : newFollowers) {
+        for (UserDTO follower : newFollowers) {
             ImageIcon icon = new ImageIcon(new URL(follower.getAvatarUrl()));
             Image image = icon.getImage();
             Image scaledImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -196,7 +199,7 @@ public class GithubManagerApp extends JFrame {
     private void insertLogin() {
         String username = (String) usernameComboBox.getSelectedItem();
         String accessToken = accessTokenField.getText();
-        dbManager.insertLogin(username, accessToken);
+        lm.insertLogin(username, accessToken);
         usernameComboBox.addItem(username);
     }
 
