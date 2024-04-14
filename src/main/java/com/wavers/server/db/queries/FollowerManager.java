@@ -1,5 +1,7 @@
-package com.wavers.server;
+package com.wavers.server.db.queries;
 
+import com.wavers.server.db.QueryBase;
+import com.wavers.server.dtos.FollowerDTO;
 import com.wavers.server.utils.ResultSetStream;
 
 import java.sql.*;

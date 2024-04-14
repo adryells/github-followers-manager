@@ -1,4 +1,4 @@
-package com.wavers.server;
+package com.wavers.server.dtos;
 
 import org.kohsuke.github.GHUser;
 

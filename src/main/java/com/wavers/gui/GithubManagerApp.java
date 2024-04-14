@@ -1,16 +1,14 @@
 package com.wavers.gui;
 
-import com.wavers.server.GithubManager;
-import com.wavers.server.LoginManager;
-import com.wavers.server.FollowerDTO;
+import com.wavers.server.services.GithubService;
+import com.wavers.server.db.queries.LoginManager;
+import com.wavers.server.dtos.FollowerDTO;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -19,8 +17,8 @@ import java.util.List;
 
 public class GithubManagerApp extends JFrame {
 
-    private final JComboBox<String> usernameComboBox;
-    private final JTextField accessTokenField;
+    private JComboBox<String> usernameComboBox;
+    private JTextField accessTokenField;
     private final JTable followersTable;
     private final LoginManager loginManager = new LoginManager();
 
@@ -31,9 +29,8 @@ public class GithubManagerApp extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        JPanel panel = new JPanel();
-        JPanel inputPanel = new JPanel(new FlowLayout());
-        JPanel optionsPanel = new JPanel(new FlowLayout());
+        accessTokenField = new JTextField(15);
+        accessTokenField.setBorder(BorderFactory.createTitledBorder("Personal Access Token"));
 
         usernameComboBox = new JComboBox<>();
         usernameComboBox.setEditable(true);
@@ -42,88 +39,75 @@ public class GithubManagerApp extends JFrame {
             .getAllLoggedUsers()
             .forEach(usernameComboBox::addItem);
 
-        usernameComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String selectedUsername = (String) usernameComboBox.getSelectedItem();
-                String accessToken = loginManager.getAccessToken(selectedUsername);
-                accessTokenField.setText(accessToken);
-            }
+        usernameComboBox.addActionListener(e -> {
+            String selectedUsername = (String) usernameComboBox.getSelectedItem();
+            String accessToken = loginManager.getAccessToken(selectedUsername);
+            accessTokenField.setText(accessToken);
         });
 
-        accessTokenField = new JTextField(15);
-        accessTokenField.setBorder(BorderFactory.createTitledBorder("Personal Access Token"));
+        JPanel optionsPanel = getOptionsPanel();
 
-        JButton listFollowersButton = new JButton("All Followers");
-        JButton listNewFollowersButton = new JButton("New Followers");
-        JButton listUnFollowersButton = new JButton("UnFollowers");
         JButton insertButton = new JButton("Save login");
+        insertButton.addActionListener(e -> insertLogin());
 
-        listFollowersButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    listUsers(getManager().getFollowers());
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-
-        listNewFollowersButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    listUsers(getManager().getNewFollowers());
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-
-        listUnFollowersButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    listUsers(getManager().getUnfollowers());
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-
-        insertButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                insertLogin();
-            }
-        });
-
+        JPanel inputPanel = new JPanel(new FlowLayout());
         inputPanel.add(usernameComboBox);
         inputPanel.add(accessTokenField);
         inputPanel.add(insertButton);
-
-        optionsPanel.add(listFollowersButton);
-        optionsPanel.add(listNewFollowersButton);
-        optionsPanel.add(listUnFollowersButton);
 
         followersTable = new JTable();
         followersTable.setRowHeight(50);
         JScrollPane scrollPane = new JScrollPane(followersTable);
 
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(inputPanel);
-        panel.add(optionsPanel);
-        panel.add(scrollPane);
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(inputPanel);
+        mainPanel.add(optionsPanel);
+        mainPanel.add(scrollPane);
 
-        add(panel);
+        add(mainPanel);
         setVisible(true);
     }
 
-    private GithubManager getManager() throws IOException{
+    private JPanel getOptionsPanel() {
+        JButton listFollowersButton = new JButton("All Followers");
+        listFollowersButton.addActionListener(e -> {
+            try {
+                listUsers(getManager().getFollowers());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        JButton listNewFollowersButton = new JButton("New Followers");
+        listNewFollowersButton.addActionListener(e -> {
+            try {
+                listUsers(getManager().getNewFollowers());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        JButton listUnFollowersButton = new JButton("UnFollowers");
+        listUnFollowersButton.addActionListener(e -> {
+            try {
+                listUsers(getManager().getUnfollowers());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        JPanel optionsPanel = new JPanel(new FlowLayout());
+        optionsPanel.add(listFollowersButton);
+        optionsPanel.add(listNewFollowersButton);
+        optionsPanel.add(listUnFollowersButton);
+        return optionsPanel;
+    }
+
+    private GithubService getManager() throws IOException{
         String accessToken = accessTokenField.getText();
         String username = (String) usernameComboBox.getSelectedItem();
-        return new GithubManager(accessToken, username);
+        return new GithubService(accessToken, username);
     }
 
     private void listUsers(List<FollowerDTO> users) {
@@ -137,7 +121,9 @@ public class GithubManagerApp extends JFrame {
                     int modelRow = followersTable.convertRowIndexToModel(viewRow);
                     if (modelRow >= 0 && modelRow < users.size()) {
                         try {
-                            Desktop.getDesktop().browse(new URL(users.get(modelRow).getHtmlUrl()).toURI());
+                            Desktop
+                                .getDesktop()
+                                .browse(new URL(users.get(modelRow).getHtmlUrl()).toURI());
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -154,12 +140,7 @@ public class GithubManagerApp extends JFrame {
             TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
             followersTable.setRowSorter(sorter);
 
-            sorter.setComparator(1, new Comparator<Long>() {
-                @Override
-                public int compare(Long o1, Long o2) {
-                    return Long.compare(o1, o2);
-                }
-            });
+            sorter.setComparator(1, Comparator.comparingLong((Long o) -> o));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -203,10 +184,6 @@ public class GithubManagerApp extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                new GithubManagerApp();
-            }
-        });
+        SwingUtilities.invokeLater(GithubManagerApp::new);
     }
 }

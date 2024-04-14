@@ -1,19 +1,21 @@
-package com.wavers.server;
+package com.wavers.server.services;
 
+import com.wavers.server.db.queries.FollowerManager;
+import com.wavers.server.dtos.FollowerDTO;
 import org.kohsuke.github.*;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GithubManager {
+public class GithubService {
 
     private final GitHub github;
     private final GHUser currentUser;
     private final FollowerManager followerManager = new FollowerManager();
 
 
-    public GithubManager(String ACCESS_TOKEN, String username) throws IOException {
+    public GithubService(String ACCESS_TOKEN, String username) throws IOException {
         this.github = new GitHubBuilder().withOAuthToken(ACCESS_TOKEN).build();
         this.currentUser = github.getUser(username);
     }

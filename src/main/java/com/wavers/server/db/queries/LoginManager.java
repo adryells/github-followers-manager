@@ -1,6 +1,7 @@
-package com.wavers.server;
+package com.wavers.server.db.queries;
 
 
+import com.wavers.server.db.QueryBase;
 import com.wavers.server.utils.ResultSetStream;
 
 import java.sql.*;
@@ -11,7 +12,7 @@ public class LoginManager extends QueryBase {
     public void insertLogin(String username, String accessToken) {
         try (
             Connection conn = getConnection();
-             Statement stmt = conn.createStatement()
+            Statement stmt = conn.createStatement()
         ) {
             String insertSql = String.format(
                 "INSERT INTO login (username, accessToken) VALUES ('%s', '%s')",
@@ -26,8 +27,8 @@ public class LoginManager extends QueryBase {
     public List<String> getAllLoggedUsers() {
         try (
             Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM login");
-             ResultSet result = stmt.executeQuery()
+            PreparedStatement stmt = conn.prepareStatement("SELECT username FROM login");
+            ResultSet result = stmt.executeQuery()
         ) {
             return ResultSetStream
                 .toStream(result)
@@ -48,7 +49,7 @@ public class LoginManager extends QueryBase {
     public String getAccessToken(String username) {
         try (
             Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT accessToken FROM login WHERE username = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT accessToken FROM login WHERE username = ?")
         ) {
             stmt.setString(1, username);
             ResultSet result = stmt.executeQuery();
