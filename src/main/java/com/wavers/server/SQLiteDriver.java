@@ -2,18 +2,18 @@ package com.wavers.server;
 
 import java.sql.*;
 
-public class SQLiteDBManager {
+public class SQLiteDriver {
     private static final String DATABASE_URL = "jdbc:sqlite:user_data.db";
-    private static SQLiteDBManager instance;
+    private static SQLiteDriver instance;
 
-    private SQLiteDBManager() {
+    private SQLiteDriver() {
         createTable();
     }
 
     // Singleton instance of DB
-    public static SQLiteDBManager getInstance() {
+    public static SQLiteDriver getInstance() {
         if (instance == null) {
-            instance = new SQLiteDBManager();
+            instance = new SQLiteDriver();
         }
 
         return instance;

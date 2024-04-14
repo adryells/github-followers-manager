@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class QueryBase {
-    SQLiteDBManager dbManager = SQLiteDBManager.getInstance();
+    SQLiteDriver dbManager = SQLiteDriver.getInstance();
 
     public Connection getConnection() throws SQLException {
         return dbManager.getConnection();

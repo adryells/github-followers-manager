@@ -1,8 +1,10 @@
 package com.wavers.server;
 
 
+import com.wavers.server.utils.ResultSetStream;
+
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class LoginManager extends QueryBase {
@@ -21,27 +23,32 @@ public class LoginManager extends QueryBase {
         }
     }
 
-    public List<String> getAllUsernames() {
-        List<String> usernames = new ArrayList<>();
-
-        try (Connection conn = getConnection();
+    public List<String> getAllLoggedUsers() {
+        try (
+            Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT username FROM login");
-             ResultSet result = stmt.executeQuery()) {
-
-            while (result.next()) {
-                String username = result.getString("username");
-                usernames.add(username);
-            }
-        } catch (SQLException e) {
+             ResultSet result = stmt.executeQuery()
+        ) {
+            return ResultSetStream
+                .toStream(result)
+                .map(rs -> {
+                    try {
+                        return rs.getString("username");
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+        } catch (RuntimeException | SQLException e) {
             System.err.println("Error: " + e.getMessage());
+            return Collections.emptyList();
         }
-
-        return usernames;
     }
 
     public String getAccessToken(String username) {
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT accessToken FROM login WHERE username = ?");
+        try (
+            Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement("SELECT accessToken FROM login WHERE username = ?");
         ) {
             stmt.setString(1, username);
             ResultSet result = stmt.executeQuery();

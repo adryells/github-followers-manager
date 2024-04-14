@@ -1,13 +1,18 @@
 package com.wavers.server;
 
+import com.wavers.server.utils.ResultSetStream;
+
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class FollowerManager extends QueryBase {
-    public void insertUserData(UserDTO userDTO) {
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
+    public void insertFollowerData(FollowerDTO userDTO) {
+        try (
+            Connection conn = getConnection();
+            Statement stmt = conn.createStatement()
+        ) {
             String checkSql = String.format("SELECT COUNT(*) FROM users WHERE githubId = %d", userDTO.getGithubId());
             ResultSet resultSet = stmt.executeQuery(checkSql);
             resultSet.next();
@@ -26,31 +31,24 @@ public class FollowerManager extends QueryBase {
         }
     }
 
-    public List<UserDTO> getAllUsers() {
-        List<UserDTO> userList = new ArrayList<>();
-
+    public List<FollowerDTO> getAllUsers() {
         try (
             Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users");
              ResultSet result = stmt.executeQuery()
         ) {
-            while (result.next()) {
-                String login = result.getString("login");
-                String avatarUrl = result.getString("avatarUrl");
-                String htmlUrl = result.getString("htmlUrl");
-                long githubId = result.getLong("githubId");
-
-                UserDTO userDTO = new UserDTO(githubId, login, avatarUrl, htmlUrl);
-                userList.add(userDTO);
-            }
+            return ResultSetStream
+                .toStream(result)
+                .map(FollowerDTO::fromResultSet)
+                .flatMap(Optional::stream)
+                .toList();
         } catch (SQLException e) {
             System.err.println("Error: " + e.getMessage());
+            return Collections.emptyList();
         }
-
-        return userList;
     }
 
-    public void deleteUserData(UserDTO userDTO) {
+    public void deleteFollowerData(FollowerDTO userDTO) {
         try (
             Connection conn = getConnection();
              Statement stmt = conn.createStatement()
